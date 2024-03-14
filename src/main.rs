@@ -115,6 +115,17 @@ impl Brainfuck{
 
 
 fn main(){
+	println!("Example1: Underflow");
+	println!("Result={:?}",Brainfuck::try_from(
+		"+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+."
+	).unwrap().run());
+
+	println!("Example2: Unmatched loop");
+	println!("Result={:?}",Brainfuck::try_from(
+		"+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>"
+	));
+
+	println!("Example3:");
 	Brainfuck::try_from(
 		"++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++."
 	).unwrap().run().unwrap();
