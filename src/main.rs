@@ -25,12 +25,12 @@ struct Brainfuck{
 	data:Vec<u8>,
 	data_head:usize,
 }
-impl TryFrom<&str> for Brainfuck{
+impl TryFrom<&[u8]> for Brainfuck{
 	type Error=LexError;
-	fn try_from(value:&str)->Result<Self,Self::Error>{
+	fn try_from(value:&[u8])->Result<Self,Self::Error>{
 		let mut stack=Vec::new();
 		let mut first_pass=Vec::with_capacity(value.len());
-		for (i,byte) in value.bytes().enumerate(){
+		for (i,byte) in value.iter().enumerate(){
 			let ins=match byte{
 				b'>'=>Some(Instruction::MoveRight),
 				b'<'=>Some(Instruction::MoveLeft),
@@ -44,7 +44,7 @@ impl TryFrom<&str> for Brainfuck{
 					*first_pass.get_mut(open_loop_index).unwrap()=Some(Instruction::OpenLoop(i));
 					Some(Instruction::CloseLoop(open_loop_index))
 				},
-				other=>return Err(LexError::InvalidInstruction(other)),
+				&other=>return Err(LexError::InvalidInstruction(other)),
 			};
 			first_pass.push(ins);
 		}
@@ -54,6 +54,12 @@ impl TryFrom<&str> for Brainfuck{
 			data:Vec::new(),
 			data_head:0,
 		})
+	}
+}
+impl TryFrom<&str> for Brainfuck{
+	type Error=LexError;
+	fn try_from(value:&str)->Result<Self,Self::Error>{
+		Self::try_from(value.as_bytes())
 	}
 }
 #[derive(Debug)]
