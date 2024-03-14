@@ -71,7 +71,7 @@ pub enum RunError{
 impl Brainfuck{
 	fn get_or_reserve(&mut self)->&mut u8{
 		if self.data.len()<=self.data_head{
-			self.data.extend((self.data.len()..=self.data_head).map(|_|0));
+			self.data.extend(std::iter::repeat(0).take(self.data_head-self.data.len()+1));
 		}
 		self.data.get_mut(self.data_head).unwrap()
 	}
