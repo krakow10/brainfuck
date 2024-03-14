@@ -8,8 +8,8 @@ enum Instruction{
 	Decrement,
 	Write,
 	Read,
-	OpenLoop(usize),
-	CloseLoop(usize),
+	OpenLoop{close_position:usize},
+	CloseLoop{open_position:usize},
 }
 #[derive(Debug)]
 pub enum LexError{
@@ -30,7 +30,7 @@ impl TryFrom<&[u8]> for Brainfuck{
 	fn try_from(value:&[u8])->Result<Self,Self::Error>{
 		let mut stack=Vec::new();
 		let mut first_pass=Vec::with_capacity(value.len());
-		for (i,byte) in value.iter().enumerate(){
+		for (position,byte) in value.iter().enumerate(){
 			let ins=match byte{
 				b'>'=>Some(Instruction::MoveRight),
 				b'<'=>Some(Instruction::MoveLeft),
@@ -38,11 +38,11 @@ impl TryFrom<&[u8]> for Brainfuck{
 				b'-'=>Some(Instruction::Decrement),
 				b'.'=>Some(Instruction::Write),
 				b','=>Some(Instruction::Read),
-				b'['=>{stack.push(i);None},
+				b'['=>{stack.push(position);None},
 				b']'=>{
-					let open_loop_index=stack.pop().ok_or(LexError::UnmatchedCloseLoop{position:i})?;
-					*first_pass.get_mut(open_loop_index).unwrap()=Some(Instruction::OpenLoop(i));
-					Some(Instruction::CloseLoop(open_loop_index))
+					let open_position=stack.pop().ok_or(LexError::UnmatchedCloseLoop{position})?;
+					*first_pass.get_mut(open_position).unwrap()=Some(Instruction::OpenLoop{close_position:position});
+					Some(Instruction::CloseLoop{open_position})
 				},
 				&other=>return Err(LexError::InvalidInstruction(other)),
 			};
@@ -101,11 +101,11 @@ impl Brainfuck{
 			Some(Instruction::Read)=>{
 				std::io::stdin().read_exact(std::slice::from_mut(self.get_or_reserve())).map_err(RunError::Io)?;
 			},
-			Some(&Instruction::OpenLoop(index))=>if *self.get_or_reserve()==0{
-				self.instruction_head=index;
+			Some(&Instruction::OpenLoop{close_position})=>if *self.get_or_reserve()==0{
+				self.instruction_head=close_position;
 			},
-			Some(&Instruction::CloseLoop(index))=>if *self.get_or_reserve()!=0{
-				self.instruction_head=index;
+			Some(&Instruction::CloseLoop{open_position})=>if *self.get_or_reserve()!=0{
+				self.instruction_head=open_position;
 			},
 			None=>return Ok(false),
 		}
