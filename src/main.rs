@@ -66,7 +66,6 @@ impl TryFrom<&str> for Brainfuck{
 pub enum RunError{
 	Io(std::io::Error),
 	PointerOverflow{position:usize},
-	PointerUnderflow{position:usize},
 }
 impl Brainfuck{
 	fn get_or_reserve(&mut self)->&mut u8{
@@ -85,7 +84,12 @@ impl Brainfuck{
 			},
 			Some(Instruction::MoveLeft)=>match self.data_head.checked_sub(1){
 				Some(value)=>self.data_head=value,
-				None=>return Err(RunError::PointerUnderflow{position:self.instruction_head}),
+				None=>{
+					//splice zeroes onto the beginning such that the capacity doubles.
+					let offset=self.data.capacity().max(1);
+					self.data.splice(0..0,std::iter::repeat(0).take(offset));
+					self.data_head=offset-1;
+				},
 			},
 			Some(Instruction::Increment)=>{
 				let c=self.get_or_reserve();
@@ -121,10 +125,11 @@ impl Brainfuck{
 
 
 fn main(){
-	println!("Example1: Underflow");
-	println!("Result={:?}",Brainfuck::try_from(
+	println!("Example1: Underflow handling");
+	Brainfuck::try_from(
 		"+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+."
-	).unwrap().run());
+	).unwrap().run().unwrap();
+	print!("\n");
 
 	println!("Example2: Unmatched loop");
 	println!("Result={:?}",Brainfuck::try_from(
